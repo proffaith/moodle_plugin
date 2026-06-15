@@ -51,6 +51,7 @@ class provision_course extends external_api {
                             'time_limit' => new external_value(PARAM_INT, 'Quiz time limit (minutes; 0 = none)', VALUE_DEFAULT, 0),
                             'attempts' => new external_value(PARAM_INT, 'Quiz attempts allowed (0 = unlimited)', VALUE_DEFAULT, 0),
                             'co_id'  => new external_value(PARAM_INT, 'ProfFaith course-objective id (quiz/page gating key)', VALUE_DEFAULT, 0),
+                            'task_id' => new external_value(PARAM_INT, 'ProfFaith checklist-task id (legacy task-quiz link key)', VALUE_DEFAULT, 0),
                             // Pathway (page) gating.
                             'pathway' => new external_value(PARAM_ALPHANUMEXT, 'gamification | traditional_1 | traditional_2', VALUE_DEFAULT, ''),
                             'threshold' => new external_value(PARAM_INT, 'Pre-test routing threshold percent', VALUE_DEFAULT, 80),
@@ -191,6 +192,7 @@ class provision_course extends external_api {
         $materialviewbyid = [];     // material_id => full view URL (url or resource)
         $forumcmidbyid = [];        // discussion assignment_id => forum cmid
         $quizcmidbycopurpose = [];  // "co_id:purpose" => cmid (proffaith-quiz: links)
+        $taskquizcmidbyid = [];     // checklist task_id => cmid (legacy task-quiz links)
         $pretestgradeitembyco = []; // co_id => quiz grade_item id (pathway gating)
         $gamifygradeitem = 0;       // course-wide Lawyer's Quest grade_item id
         $pathpages = [];            // [['cmid','pathway','co_id','threshold'], ...]
@@ -360,6 +362,9 @@ class provision_course extends external_api {
                     $purpose = (string) $act['purpose'];
                     $coid = (int) $act['co_id'];
                     $quizcmidbycopurpose[$coid . ':' . $purpose] = $created->coursemodule;
+                    if (!empty($act['task_id'])) {
+                        $taskquizcmidbyid[(int) $act['task_id']] = $created->coursemodule;
+                    }
                     if ($gradeitemid) {
                         if ($purpose === 'pretest') {
                             $pretestgradeitembyco[$coid] = $gradeitemid;
@@ -391,7 +396,8 @@ class provision_course extends external_api {
         // Resolve ProfFaith link markers to the created activities, in both
         // checklist labels and generated page content.
         $resolve = function ($text) use ($alwdcmidbyset, $assigncmidbyid,
-                $materialviewbyid, $forumcmidbyid, $quizcmidbycopurpose, $CFG) {
+                $materialviewbyid, $forumcmidbyid, $quizcmidbycopurpose,
+                $taskquizcmidbyid, $CFG) {
             $text = preg_replace_callback('/proffaith-lti:set:(\d+)/', function ($m) use ($alwdcmidbyset, $CFG) {
                 $sid = (int) $m[1];
                 return isset($alwdcmidbyset[$sid])
@@ -415,6 +421,11 @@ class provision_course extends external_api {
                 $key = (int) $m[1] . ':' . $m[2];
                 return isset($quizcmidbycopurpose[$key])
                     ? $CFG->wwwroot . '/mod/quiz/view.php?id=' . $quizcmidbycopurpose[$key] : '#';
+            }, $text);
+            $text = preg_replace_callback('/proffaith-taskquiz:(\d+)/', function ($m) use ($taskquizcmidbyid, $CFG) {
+                $tid = (int) $m[1];
+                return isset($taskquizcmidbyid[$tid])
+                    ? $CFG->wwwroot . '/mod/quiz/view.php?id=' . $taskquizcmidbyid[$tid] : '#';
             }, $text);
             return $text;
         };
