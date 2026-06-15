@@ -4,7 +4,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_proffaith';
-$plugin->version   = 2026061408;
+$plugin->version   = 2026061409;
 $plugin->requires  = 2024100700;   // Moodle 4.5+
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = 'v0.7.0';     // + legacy manual-builder quizzes (CSV → mod_quiz)
+$plugin->release   = 'v0.8.0';     // + assignment handout files (assign introattachments)

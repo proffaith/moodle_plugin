@@ -44,6 +44,7 @@ class provision_course extends external_api {
                             'assignment_id' => new external_value(PARAM_INT, 'ProfFaith assignment id', VALUE_DEFAULT, 0),
                             'material_id' => new external_value(PARAM_INT, 'ProfFaith material id', VALUE_DEFAULT, 0),
                             'draft_itemid' => new external_value(PARAM_INT, 'Uploaded file draft itemid (resource type)', VALUE_DEFAULT, 0),
+                            'introattachments_itemid' => new external_value(PARAM_INT, 'Uploaded handout-files draft itemid (assign introattachments)', VALUE_DEFAULT, 0),
                             'grade'  => new external_value(PARAM_INT, 'Max grade', VALUE_DEFAULT, 100),
                             // Quiz fields.
                             'questions_xml' => new external_value(PARAM_RAW, 'Moodle-XML question bank (quiz type)', VALUE_DEFAULT, ''),
@@ -268,6 +269,11 @@ class provision_course extends external_api {
                     $mi->assignfeedback_comments_enabled = 1;
                     $mi->assignfeedback_file_enabled = 0;
                     $mi->assignfeedback_offline_enabled = 0;
+                    // Instructor handout files (uploaded to a draft area by the
+                    // ProfFaith push) → the assignment's downloadable "Additional files".
+                    if (!empty($act['introattachments_itemid'])) {
+                        $mi->introattachments = (int) $act['introattachments_itemid'];
+                    }
                 } else if ($act['type'] === 'url') {
                     $mi = self::base_moduleinfo('url', $courseid, $sectionnum, $act['name']);
                     $mi->introeditor = self::editor('');
