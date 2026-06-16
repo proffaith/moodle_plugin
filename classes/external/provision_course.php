@@ -190,6 +190,7 @@ class provision_course extends external_api {
 
         $alwdcmidbyset = [];        // set_id => cmid, to resolve checklist links
         $assigncmidbyid = [];       // assignment_id => cmid
+        $assigninstbyid = [];       // assignment_id => assign instance id (AI-feedback binding)
         $materialviewbyid = [];     // material_id => full view URL (url or resource)
         $forumcmidbyid = [];        // discussion assignment_id => forum cmid
         $quizcmidbycopurpose = [];  // "co_id:purpose" => cmid (proffaith-quiz: links)
@@ -240,7 +241,10 @@ class provision_course extends external_api {
                     $mi = self::base_moduleinfo('assign', $courseid, $sectionnum, $act['name']);
                     $mi->introeditor = self::editor($act['html']);
                     $mi->alwaysshowdescription = 1;
-                    $mi->submissiondrafts = 0;
+                    // Require an explicit "Submit" so there's a draft state for the
+                    // ProfFaith pre-submission AI check (draft) distinct from the
+                    // final faculty report (submitted).
+                    $mi->submissiondrafts = 1;
                     $mi->requiresubmissionstatement = 0;
                     $mi->sendnotifications = 0;
                     $mi->sendstudentnotifications = 1;
@@ -264,7 +268,7 @@ class provision_course extends external_api {
                     $mi->grade = !empty($act['grade']) ? (int) $act['grade'] : 100;
                     // Submission/feedback plugins: enable online text so it's usable.
                     $mi->assignsubmission_onlinetext_enabled = 1;
-                    $mi->assignsubmission_file_enabled = 0;
+                    $mi->assignsubmission_file_enabled = 1;
                     $mi->assignsubmission_comments_enabled = 0;
                     $mi->assignfeedback_comments_enabled = 1;
                     $mi->assignfeedback_file_enabled = 0;
@@ -328,6 +332,7 @@ class provision_course extends external_api {
                 } else if ($act['type'] === 'assign') {
                     if (!empty($act['assignment_id'])) {
                         $assigncmidbyid[(int) $act['assignment_id']] = $created->coursemodule;
+                        $assigninstbyid[(int) $act['assignment_id']] = (int) $created->instance;
                     }
                     if (!empty($act['rubric']['criteria'])
                             && self::apply_rubric($created->coursemodule, $act['rubric'])) {
@@ -468,6 +473,16 @@ class provision_course extends external_api {
 
         rebuild_course_cache($courseid, true);
 
+        // Echo created assign cmids back so ProfFaith can bind each Moodle
+        // assignment to its InstructorAssignment for AI writing feedback.
+        $result['assignments'] = [];
+        foreach ($assigncmidbyid as $aid => $cmid) {
+            $result['assignments'][] = [
+                'assignment_id' => (int) $aid,
+                'cmid' => (int) $cmid,
+                'assignid' => (int) ($assigninstbyid[$aid] ?? 0),
+            ];
+        }
         $result['course_url'] = $CFG->wwwroot . '/course/view.php?id=' . $courseid;
         return $result;
     }
@@ -488,6 +503,11 @@ class provision_course extends external_api {
             'gated'      => new external_value(PARAM_INT, 'Pathway pages gated by availability'),
             'target_mode' => new external_value(PARAM_INT, '1 if pushed into an existing course'),
             'typeid'     => new external_value(PARAM_INT, 'Bound LTI tool type id'),
+            'assignments' => new external_multiple_structure(new external_single_structure([
+                'assignment_id' => new external_value(PARAM_INT, 'ProfFaith InstructorAssignment id'),
+                'cmid' => new external_value(PARAM_INT, 'Created assign course module id'),
+                'assignid' => new external_value(PARAM_INT, 'Created assign instance id'),
+            ]), 'assign cmids by ProfFaith assignment id, for AI-feedback binding', VALUE_OPTIONAL),
         ]);
     }
 
