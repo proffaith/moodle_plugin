@@ -36,7 +36,11 @@ class provision_course extends external_api {
                     'summary' => new external_value(PARAM_RAW, 'Section summary HTML', VALUE_DEFAULT, ''),
                     'activities' => new external_multiple_structure(
                         new external_single_structure([
-                            'type'   => new external_value(PARAM_ALPHA, 'label | alwd | assign | url | quiz | page | forum | resource'),
+                            // ALPHAEXT, not ALPHA: PARAM_ALPHA silently strips the
+                            // underscore in 'draft_feedback' and it would arrive as
+                            // an unrecognised type. Alpha-only values are unaffected.
+                            'type'   => new external_value(PARAM_ALPHAEXT,
+                                'label | alwd | draft_feedback | assign | url | quiz | page | forum | resource'),
                             'name'   => new external_value(PARAM_TEXT, 'Activity name'),
                             'html'   => new external_value(PARAM_RAW, 'HTML body (label/assign/page/quiz intro)', VALUE_DEFAULT, ''),
                             'url'    => new external_value(PARAM_RAW, 'External URL (url type)', VALUE_DEFAULT, ''),
@@ -182,8 +186,8 @@ class provision_course extends external_api {
         self::ensure_numsections($courseid, $sectionbase + $numsections);
 
         $result = ['course_id' => $courseid, 'sections' => 0, 'activities' => 0,
-                   'alwd' => 0, 'quizzes' => 0, 'pages' => 0, 'forums' => 0,
-                   'resources' => 0, 'rubrics' => 0, 'gated' => 0,
+                   'alwd' => 0, 'draftfeedback' => 0, 'quizzes' => 0, 'pages' => 0,
+                   'forums' => 0, 'resources' => 0, 'rubrics' => 0, 'gated' => 0,
                    'target_mode' => $targetmode ? 1 : 0, 'typeid' => $typeid];
 
         $pfseq = 0;                 // unique suffix for ProfFaith cm idnumbers
@@ -237,6 +241,35 @@ class provision_course extends external_api {
                     $mi->showdescriptionlaunch = 0;
                     $mi->grade = !empty($act['grade']) ? (int) $act['grade'] : 100;
                     $result['alwd']++;
+                } else if ($act['type'] === 'draft_feedback') {
+                    // Per-assignment AI draft self-check. Formative and transient:
+                    // the student pastes a draft, gets feedback, and nothing is
+                    // stored — so unlike 'alwd' this deliberately takes NO grade
+                    // and creates NO gradebook line item.
+                    $mi = self::base_moduleinfo('lti', $courseid, $sectionnum, $act['name']);
+                    $mi->introeditor = self::editor('');
+                    $mi->typeid = $typeid;
+                    $mi->toolurl = '';
+                    $mi->securetoolurl = '';
+                    $mi->launchcontainer = 4; // new window → top-level → first-party state cookie
+                    $mi->instructorcustomparameters = "proffaith_tool=draft_feedback\n"
+                        . "assignment_id=" . (int) $act['assignment_id'];
+                    $mi->instructorchoiceacceptgrades = 0; // LTI_SETTING_NEVER → no line item
+                    // Name and email ARE sent, and that is deliberate: the draft
+                    // scrub targets the student's own identifiers before any of
+                    // their text reaches an LLM, so it has to know them.
+                    $mi->instructorchoicesendname = 1;
+                    $mi->instructorchoicesendemailaddr = 1;
+                    // No roster — a self-check only ever concerns the one student
+                    // launching it, so NRPS would be data the tool never uses.
+                    $mi->instructorchoiceallowroster = 0;
+                    $mi->showtitlelaunch = 1;
+                    $mi->showdescriptionlaunch = 0;
+                    // Explicit 0 = "None". mod_lti reads ->grade even when it is
+                    // not accepting grades, and leaving it undefined warns under
+                    // PHP 8.x and can mint a grade item with a null maximum.
+                    $mi->grade = 0;
+                    $result['draftfeedback']++;
                 } else if ($act['type'] === 'assign') {
                     $mi = self::base_moduleinfo('assign', $courseid, $sectionnum, $act['name']);
                     $mi->introeditor = self::editor($act['html']);
@@ -495,6 +528,7 @@ class provision_course extends external_api {
             'sections'   => new external_value(PARAM_INT, 'Sections written'),
             'activities' => new external_value(PARAM_INT, 'Activities created'),
             'alwd'       => new external_value(PARAM_INT, 'ALWD activities created'),
+            'draftfeedback' => new external_value(PARAM_INT, 'Draft self-check LTI activities created'),
             'quizzes'    => new external_value(PARAM_INT, 'Quiz activities created'),
             'pages'      => new external_value(PARAM_INT, 'Page activities created'),
             'forums'     => new external_value(PARAM_INT, 'Forum (discussion) activities created'),
