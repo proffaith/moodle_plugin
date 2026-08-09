@@ -301,7 +301,14 @@ class provision_course extends external_api {
                     $mi->grade = !empty($act['grade']) ? (int) $act['grade'] : 100;
                     // Submission/feedback plugins: enable online text so it's usable.
                     $mi->assignsubmission_onlinetext_enabled = 1;
+                    $mi->assignsubmission_onlinetext_wordlimit = 0;
+                    $mi->assignsubmission_onlinetext_wordlimit_enabled = 0;
                     $mi->assignsubmission_file_enabled = 1;
+                    // Without explicit limits the file plugin is created with
+                    // maxfilesubmissions=0 — enabled but allowing zero files, so
+                    // Moodle renders no upload area ($mform=null skips defaults).
+                    $mi->assignsubmission_file_maxfiles = 5;
+                    $mi->assignsubmission_file_maxsizebytes = 0; // site limit
                     $mi->assignsubmission_comments_enabled = 0;
                     $mi->assignfeedback_comments_enabled = 1;
                     $mi->assignfeedback_file_enabled = 0;
