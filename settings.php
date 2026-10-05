@@ -18,4 +18,10 @@ if ($hassiteconfig) {
         get_string('webhook_secret', 'local_proffaith'),
         get_string('webhook_secret_desc', 'local_proffaith'),
         ''));
+
+    $settings->add(new admin_setting_configtext(
+        'local_proffaith/proffaith_url',
+        get_string('proffaith_url', 'local_proffaith'),
+        get_string('proffaith_url_desc', 'local_proffaith'),
+        'https://proffaith.com', PARAM_URL));
 }

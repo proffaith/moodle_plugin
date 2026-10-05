@@ -224,6 +224,46 @@ class access {
     }
 
     /**
+     * True for accounts the ProfFaith sign-in handoff must never log in: site
+     * admins and anyone holding a managing or teaching role in any context.
+     */
+    public static function is_privileged(\stdClass $user): bool {
+        global $DB;
+        if (is_siteadmin($user)) {
+            return true;
+        }
+        [$insql, $params] = $DB->get_in_or_equal(
+            ['manager', 'coursecreator', 'editingteacher', 'teacher'], SQL_PARAMS_NAMED);
+        $params['userid'] = $user->id;
+        return $DB->record_exists_sql(
+            "SELECT 1
+               FROM {role_assignments} ra
+               JOIN {role} r ON r.id = ra.roleid
+              WHERE ra.userid = :userid AND r.archetype $insql", $params);
+    }
+
+    /**
+     * Where a buyer lands after the handoff: the product's course when there is
+     * exactly one they are actively enrolled in, otherwise their dashboard.
+     */
+    public static function landing_url(\stdClass $user, string $productkey): \moodle_url {
+        global $DB;
+        if ($productkey !== '') {
+            $sql = "SELECT e.courseid
+                      FROM {cohort} c
+                      JOIN {enrol} e ON e.enrol = 'cohort' AND e.customint1 = c.id AND e.status = 0
+                      JOIN {user_enrolments} ue ON ue.enrolid = e.id AND ue.userid = :userid AND ue.status = 0
+                     WHERE c.idnumber = :idnumber";
+            $courseids = $DB->get_fieldset_sql($sql,
+                ['userid' => $user->id, 'idnumber' => self::cohort_idnumber($productkey)]);
+            if (count($courseids) === 1) {
+                return new \moodle_url('/course/view.php', ['id' => reset($courseids)]);
+            }
+        }
+        return new \moodle_url('/my/');
+    }
+
+    /**
      * Backstop: end access whose timeend has passed, so it still ends if
      * ProfFaith never sends the suspension.
      *

@@ -31,3 +31,9 @@ $string['privacy:metadata:access:productkey'] = 'The ProfFaith product the acces
 $string['privacy:metadata:access:entitlementid'] = 'The ProfFaith entitlement the access came from.';
 $string['privacy:metadata:access:timeend'] = 'When the access ends.';
 $string['privacy:metadata:access:status'] = 'Whether the access is active, suspended or expired.';
+
+// Sign-in handoff from ProfFaith (sso.php).
+$string['proffaith_url'] = 'ProfFaith site URL';
+$string['proffaith_url_desc'] = 'Base URL of the ProfFaith site that hands buyers into this Moodle. '
+    . 'Sign-in codes are redeemed at [this URL]/moodle/sso/redeem, signed with the webhook shared secret above.';
+$string['sso_failed'] = 'We could not sign you in to your prep course. Please open it again from ProfFaith.';
