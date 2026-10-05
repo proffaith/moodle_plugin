@@ -78,6 +78,24 @@ $functions = [
         'capabilities' => 'mod/forum:addnews',
         'ajax'         => false,
     ],
+    'local_proffaith_sync_access' => [
+        'classname'    => 'local_proffaith\\external\\sync_access',
+        'methodname'   => 'execute',
+        'description'  => 'Make one ProfFaith user\'s paid access to one product true: find or create the '
+                        . 'Moodle user and add/remove them from the product cohort. Idempotent.',
+        'type'         => 'write',
+        'capabilities' => 'moodle/user:create,moodle/user:update,moodle/cohort:assign',
+        'ajax'         => false,
+    ],
+    'local_proffaith_list_access' => [
+        'classname'    => 'local_proffaith\\external\\list_access',
+        'methodname'   => 'execute',
+        'description'  => 'List a product\'s access rows (user, end time, status, cohort membership) '
+                        . 'for ProfFaith\'s nightly reconcile.',
+        'type'         => 'read',
+        'capabilities' => 'moodle/cohort:assign',
+        'ajax'         => false,
+    ],
 ];
 
 $services = [
@@ -92,5 +110,15 @@ $services = [
         'shortname'       => 'proffaith_provisioning',
         'downloadfiles'   => 0,
         'uploadfiles'     => 1,  // S3-file readings upload via webservice/upload.php
+    ],
+    // Paid prep enrolment. Its own service + token (cli/make_access_token.php) so
+    // the provisioning token never gains user-creation rights, and vice versa.
+    'ProfFaith access' => [
+        'functions'       => ['local_proffaith_sync_access', 'local_proffaith_list_access'],
+        'restrictedusers' => 1,
+        'enabled'         => 1,
+        'shortname'       => 'proffaith_access',
+        'downloadfiles'   => 0,
+        'uploadfiles'     => 0,
     ],
 ];

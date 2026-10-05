@@ -20,3 +20,14 @@ $string['privacy:metadata:proffaith:fullname'] = 'The student full name, so feed
 $string['privacy:metadata:proffaith:email'] = 'The student email, used to correlate the submission to the student.';
 $string['privacy:metadata:proffaith:submission'] = 'The text and files of the assignment submission, '
     . 'evaluated to generate feedback.';
+
+// Paid prep access (ProfFaith entitlements projected into product cohorts).
+$string['task_expire_access'] = 'Expire lapsed ProfFaith prep access';
+$string['access_duplicateemail'] = 'More than one Moodle user has the email {$a}; merge them before syncing access.';
+$string['access_emailinuse'] = 'The email {$a} already belongs to a different Moodle account.';
+$string['privacy:metadata:access'] = 'Paid prep access granted from a ProfFaith entitlement.';
+$string['privacy:metadata:access:userid'] = 'The user the access belongs to.';
+$string['privacy:metadata:access:productkey'] = 'The ProfFaith product the access is for.';
+$string['privacy:metadata:access:entitlementid'] = 'The ProfFaith entitlement the access came from.';
+$string['privacy:metadata:access:timeend'] = 'When the access ends.';
+$string['privacy:metadata:access:status'] = 'Whether the access is active, suspended or expired.';

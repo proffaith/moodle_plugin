@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/proffaith/db" VERSION="20261004" COMMENT="XMLDB file for Moodle local/proffaith"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_proffaith_access" COMMENT="Paid prep access projected from ProfFaith entitlements: one row per user and product.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="productkey" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="ProfFaith product key; the cohort idnumber is pf-product-[productkey]"/>
+        <FIELD NAME="entitlementid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="ProfFaith textbook_entitlements.id last synced"/>
+        <FIELD NAME="timeend" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Unix time access ends; 0 = no end"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="active" SEQUENCE="false" COMMENT="active, suspended or expired"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="user_product" TYPE="unique" FIELDS="userid, productkey"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="status_timeend" UNIQUE="false" FIELDS="status, timeend"/>
+        <INDEX NAME="productkey" UNIQUE="false" FIELDS="productkey"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>

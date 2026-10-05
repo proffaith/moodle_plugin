@@ -4,7 +4,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_proffaith';
-$plugin->version   = 2026072200;
+$plugin->version   = 2026100400;
 $plugin->requires  = 2024100700;   // Moodle 4.5+
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = 'v0.11.0';    // + draft_feedback LTI activities (ungraded AI draft self-check)
+$plugin->release   = 'v0.12.0';    // + paid prep access: sync_access / list_access, product cohorts, expiry backstop
