@@ -17,7 +17,10 @@ Exposed via the `proffaith_provisioning` service (file uploads enabled):
   - `mod_page` learning-path content, **availability-gated** on the pre-test
     grade (≥ / < threshold) and the choice quiz (= 100%);
   - `mod_assign` assignments with **advanced-grading rubrics**;
-  - `mod_forum` discussions; `mod_url` + `mod_resource` (uploaded file) readings.
+  - `mod_forum` discussions — `forum_type: qanda` builds a Q and A forum (students
+    post before they see classmates' replies) and posts the prompt as its
+    question; anything else builds a standard forum. `mod_url` +
+    `mod_resource` (uploaded file) readings.
   - Checklist/content links resolve to the real created activities.
   - **Idempotent**, and SIS-safe: a targeted push only replaces ProfFaith's own
     marked sections/activities and reuses empty leading topics — it never
