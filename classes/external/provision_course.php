@@ -60,6 +60,10 @@ class provision_course extends external_api {
                             // Pathway (page) gating.
                             'pathway' => new external_value(PARAM_ALPHANUMEXT, 'gamification | traditional_1 | traditional_2', VALUE_DEFAULT, ''),
                             'threshold' => new external_value(PARAM_INT, 'Pre-test routing threshold percent', VALUE_DEFAULT, 80),
+                            // Forum type (forum activity). 'qanda' = Moodle's Q and A
+                            // forum: a student sees classmates' replies only after
+                            // posting their own. Any other value builds 'general'.
+                            'forum_type' => new external_value(PARAM_ALPHA, 'general | qanda (forum type)', VALUE_DEFAULT, 'general'),
                             // Advanced-grading rubric (assign type).
                             'rubric' => new external_single_structure([
                                 'name' => new external_value(PARAM_TEXT, 'Rubric name', VALUE_DEFAULT, ''),
@@ -187,8 +191,8 @@ class provision_course extends external_api {
 
         $result = ['course_id' => $courseid, 'sections' => 0, 'activities' => 0,
                    'alwd' => 0, 'draftfeedback' => 0, 'quizzes' => 0, 'pages' => 0,
-                   'forums' => 0, 'resources' => 0, 'rubrics' => 0, 'gated' => 0,
-                   'target_mode' => $targetmode ? 1 : 0, 'typeid' => $typeid];
+                   'forums' => 0, 'qanda_forums' => 0, 'resources' => 0, 'rubrics' => 0,
+                   'gated' => 0, 'target_mode' => $targetmode ? 1 : 0, 'typeid' => $typeid];
 
         $pfseq = 0;                 // unique suffix for ProfFaith cm idnumbers
 
@@ -350,7 +354,9 @@ class provision_course extends external_api {
                     require_once($CFG->dirroot . '/mod/forum/lib.php');
                     $mi = self::base_moduleinfo('forum', $courseid, $sectionnum, $act['name']);
                     $mi->introeditor = self::editor($act['html']);
-                    $mi->type = 'general';
+                    // ProfFaith's post-first discussion modes ask for 'qanda'
+                    // (Brightspace twin: "must post to participate").
+                    $mi->type = ($act['forum_type'] === 'qanda') ? 'qanda' : 'general';
                     $mi->assessed = 0;
                     $mi->scale = 0;
                     $mi->forcesubscribe = 0;
@@ -393,6 +399,10 @@ class provision_course extends external_api {
                     $result['forums']++;
                     if (!empty($act['assignment_id'])) {
                         $forumcmidbyid[(int) $act['assignment_id']] = $created->coursemodule;
+                    }
+                    if ($mi->type === 'qanda') {
+                        self::post_qanda_question($created, $courseid, $act);
+                        $result['qanda_forums']++;
                     }
                 } else if ($act['type'] === 'page') {
                     $result['pages']++;
@@ -539,6 +549,8 @@ class provision_course extends external_api {
             'quizzes'    => new external_value(PARAM_INT, 'Quiz activities created'),
             'pages'      => new external_value(PARAM_INT, 'Page activities created'),
             'forums'     => new external_value(PARAM_INT, 'Forum (discussion) activities created'),
+            'qanda_forums' => new external_value(PARAM_INT,
+                'Of those, Q and A forums (students post before seeing classmates)', VALUE_OPTIONAL),
             'resources'  => new external_value(PARAM_INT, 'File resource activities created'),
             'rubrics'    => new external_value(PARAM_INT, 'Assignment rubrics created'),
             'gated'      => new external_value(PARAM_INT, 'Pathway pages gated by availability'),
@@ -601,6 +613,28 @@ class provision_course extends external_api {
         $mi->name = $name;
         $mi->cmidnumber = '';
         return $mi;
+    }
+
+    /**
+     * Post a Q and A forum's question: the prompt, as its one discussion.
+     *
+     * Students cannot start a discussion in a qanda forum (that takes
+     * mod/forum:addquestion, a teacher capability), so without this post they
+     * would have nothing to answer. Same shape mod_forum uses to seed a
+     * 'single' forum in forum_add_instance(); posted as the acting (token) user.
+     */
+    protected static function post_qanda_question(\stdClass $created, $courseid, array $act): void {
+        $discussion = new \stdClass();
+        $discussion->course        = $courseid;
+        $discussion->forum         = (int) $created->instance;
+        $discussion->name          = $act['name'];
+        $discussion->assessed      = 0;
+        $discussion->message       = (string) $act['html'];
+        $discussion->messageformat = FORMAT_HTML;
+        $discussion->messagetrust  = trusttext_trusted(\context_course::instance($courseid));
+        $discussion->mailnow       = false;
+        $discussion->groupid       = -1;
+        forum_add_discussion($discussion);
     }
 
     /** Build an editor field with a fresh draft area. */
