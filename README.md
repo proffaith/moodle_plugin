@@ -16,7 +16,9 @@ Exposed via the `proffaith_provisioning` service (file uploads enabled):
     (homework / assessment / pre-test / scenario / the Lawyer's Quest choice);
   - `mod_page` learning-path content, **availability-gated** on the pre-test
     grade (≥ / < threshold) and the choice quiz (= 100%);
-  - `mod_assign` assignments with **advanced-grading rubrics**;
+  - `mod_assign` assignments with **advanced-grading rubrics**; `marking_workflow: 1`
+    turns marking workflow on, so ProfFaith's AI faculty report stays with the
+    grader until the instructor releases it;
   - `mod_forum` discussions — `forum_type: qanda` builds a Q and A forum (students
     post before they see classmates' replies) and posts the prompt as its
     question; anything else builds a standard forum. `mod_url` +

@@ -64,6 +64,11 @@ class provision_course extends external_api {
                             // forum: a student sees classmates' replies only after
                             // posting their own. Any other value builds 'general'.
                             'forum_type' => new external_value(PARAM_ALPHA, 'general | qanda (forum type)', VALUE_DEFAULT, 'general'),
+                            // Marking workflow (assign type). 1 lets ProfFaith's
+                            // 'curate' mode hold its AI faculty report in marking
+                            // until the instructor releases it; with 0 Moodle
+                            // ignores the workflow state and students see it at once.
+                            'marking_workflow' => new external_value(PARAM_INT, '1 = marking workflow on (assign type)', VALUE_DEFAULT, 0),
                             // Advanced-grading rubric (assign type).
                             'rubric' => new external_single_structure([
                                 'name' => new external_value(PARAM_TEXT, 'Rubric name', VALUE_DEFAULT, ''),
@@ -294,7 +299,7 @@ class provision_course extends external_api {
                     $mi->requireallteammemberssubmit = 0;
                     $mi->teamsubmissiongroupingid = 0;
                     $mi->blindmarking = 0;
-                    $mi->markingworkflow = 0;
+                    $mi->markingworkflow = !empty($act['marking_workflow']) ? 1 : 0;
                     $mi->markingallocation = 0;
                     $mi->markinganonymous = 0;
                     $mi->attemptreopenmethod = 'none';
